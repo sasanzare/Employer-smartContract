@@ -24,27 +24,69 @@ contract Contracting{
     }
 
     function Pay()public payable returns(string memory) {
-        
+
+        require(currentStatus==status.notStarted);
+        require(msg.sender==employer);
+        require(msg.value==amount);
+        startDate = block.timestamp;
+        currentStatus = status.paid;
+        return "Payment was made by the employer.";
+
     }
 
     function Deposit()public payable returns(string memory) {
 
+        require(msg.sender==employer);
+        require(msg.value==deposit);
+        require(currentStatus == status.paid);
+        currentStatus = status.started;
+        return "The guarantee amount was paid.";
     }
     
     function Confirm(bool verify)public returns(string memory) {
-        
+
+        require(msg.sender==employer);
+        require(currentStatus == status.started);
+        if(verify){
+            currentStatus = status.ended;
+            return "The project is over."; 
+        }else{
+            if(block.timestamp>(day*84600)+startDate){
+                currentStatus= status.suspended;
+                return "Deadline is over."; 
+            }else{
+               return "Deadline is not over."; 
+            }
+        }
     }
 
     function Judgement(bool verify)public returns(string memory) {
-        
+
+        require(currentStatus== status.suspended);
+        require(msg.sender==judge);
+        if(verify){
+            currentStatus = status.ended;
+            return "The project was ended.";
+        }else{
+            currentStatus = status.failed;
+            return "The project was failed.";
+        }
     }
 
-    function WithdrawContractor(bool verify)public payable returns(string memory) {
-        
+    function WithdrawContractor()public payable returns(string memory) {
+
+        require(msg.sender== contractor);
+        require(currentStatus == status.ended);
+        contractor.transfer(1100);
+        return "The contractor withdrew his salary.";
     }
 
-    function WithdrawEmployer(bool verify)public payable returns(string memory) {
+    function WithdrawEmployer()public payable returns(string memory) {
         
+        require(msg.sender== employer);
+        require(currentStatus == status.failed);
+        contractor.transfer(1100);
+        return "The original money and losses were withdrawn.";
     }
 
     
